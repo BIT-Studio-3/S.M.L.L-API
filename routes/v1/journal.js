@@ -1,52 +1,53 @@
-import createRouter from "./base.js";
-
+import express from "express";
 import {
-  getUser,
-  getUsers,
-  getEmail,
-  createUser,
-  updateUser,
-  deleteUser,
-} from "../../controllers/v1/userController.js";
-
+  getJournal,
+  getJournals,
+  createJournal,
+  updateJournal,
+  deleteJournal,
+} from "../../controllers/v1/journalController.js";
 import {
-  validatePostUser,
-  validatePutUser,
+  validatePostJournal,
+  validatePutJournal,
 } from "../../middleware/validation.js";
+import authenticateToken from "../../middleware/authMiddleware.js";
 
-const userController = {
-  get: getUsers,
-  getById: getUser,
-  getByEmail: getEmail,
-  create: createUser,
-  update: updateUser,
-  delete: deleteUser,
-};
+const router = express.Router();
 
-const userRouter = createRouter(
-  userController,
-  validatePostUser,
-  validatePutUser,
-);
+router.use(authenticateToken); // Apply authentication middleware to all routes
 
-export default userRouter;
+router.post("/", validatePostJournal, createJournal);
+router.put("/:id", validatePutJournal, updateJournal);
+router.get("/", getJournals);
+router.get("/:id", getJournal);
+router.delete("/:id", deleteJournal);
+
+export default router;
 
 /**
  * @swagger
  * components:
  *   schemas:
- *     User:
+ *     Journal:
  *       type: object
  *       properties:
- *         name:
+ *         id:
  *           type: string
- *           example: "John"
- *         email:
+ *           example: "1"
+ *         drinkId:
  *           type: string
- *           example: "john.doe@example.com"
- *         password:
+ *           example: "drink-uuid-1234"
+ *         userId:
  *           type: string
- *           example: "password123"
+ *           example: "user-uuid-5678"
+ *         timeDrunk:
+ *           type: string
+ *           format: date-time
+ *           example: "2023-09-18T12:34:56Z"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2023-09-18T12:34:56Z"
  *   securitySchemes:
  *     BearerAuth:
  *       type: http
@@ -56,22 +57,36 @@ export default userRouter;
  *     - BearerAuth: []
  */
 
+// POST request to create a new journal
 /**
  * @swagger
- * /api/v1/users:
+ * /api/v1/journals:
  *   post:
- *     summary: Create a new User
+ *     summary: Create a new Journal
  *     tags:
- *       - User
+ *       - Journal
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               drinkId:
+ *                 type: string
+ *                 example: "drink-uuid-1234"
+ *               userId:
+ *                 type: string
+ *                 example: "user-uuid-5678"
+ *               timeDrunk:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2023-09-18T12:34:56Z"
  *     responses:
  *       '201':
- *         description: User successfully created
+ *         description: Journal successfully created
  *         content:
  *           application/json:
  *             schema:
@@ -79,19 +94,9 @@ export default userRouter;
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "User successfully created"
+ *                   example: "Journal successfully created"
  *                 data:
- *                   $ref: '#/components/schemas/User'
- *       '400':
- *         description: User with the same email address already exists
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "User with the same email address already exists"
+ *                   $ref: '#/components/schemas/Journal'
  *       '500':
  *         description: Internal server error
  *         content:
@@ -104,137 +109,14 @@ export default userRouter;
  *                   example: "An unexpected error occurred"
  */
 
+// PUT update a journal by id
 /**
  * @swagger
- * /api/v1/users:
- *   get:
- *     summary: Get all users
- *     tags:
- *       - User
- *     responses:
- *       '200':
- *         description: Success
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/User'
- *       '404':
- *         description: No users found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "No users found"
- *       '500':
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "An unexpected error occurred"
- */
-
-/**
- * @swagger
- * /api/v1/users/{id}:
- *   get:
- *     summary: Get a user by id
- *     tags:
- *       - User
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The user id
- *     responses:
- *       '200':
- *         description: Success
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       '404':
- *         description: No user found with the provided id
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "No user with the id: {id} found"
- *       '500':
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "An unexpected error occurred"
- */
-
-/**
- * @swagger
- * /api/v1/users/email/{email}:
- *   get:
- *     summary: Get a user by email
- *     tags:
- *       - User
- *     parameters:
- *       - in: path
- *         name: email
- *         required: true
- *         schema:
- *           type: string
- *         description: The user email
- *     responses:
- *       '200':
- *         description: Success
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       '404':
- *         description: No user found with the provided email
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "No user with the email: {email} found"
- *       '500':
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "An unexpected error occurred"
- */
-
-/**
- * @swagger
- * /api/v1/users/{id}:
+ * /api/v1/journals/{id}:
  *   put:
- *     summary: Update a user by id
+ *     summary: Update a journal by id
  *     tags:
- *       - User
+ *       - Journal
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -243,16 +125,27 @@ export default userRouter;
  *         required: true
  *         schema:
  *           type: string
- *         description: The user id
+ *         description: The journal id
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               drinkId:
+ *                 type: string
+ *                 example: "drink-uuid-1234"
+ *               userId:
+ *                 type: string
+ *                 example: "user-uuid-5678"
+ *               timeDrunk:
+ *                 type: string
+ *                 format: date-time
+ *                 example: "2023-09-18T12:34:56Z"
  *     responses:
  *       '200':
- *         description: User successfully updated
+ *         description: Journal successfully updated
  *         content:
  *           application/json:
  *             schema:
@@ -260,11 +153,11 @@ export default userRouter;
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "User with the id: {id} successfully updated"
+ *                   example: "Journal with the id: {id} successfully updated"
  *                 data:
- *                   $ref: '#/components/schemas/User'
+ *                   $ref: '#/components/schemas/Journal'
  *       '404':
- *         description: No user found with the provided id
+ *         description: No journal found with the provided id
  *         content:
  *           application/json:
  *             schema:
@@ -272,7 +165,7 @@ export default userRouter;
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "No user with the id: {id} found"
+ *                   example: "No journal with the id: {id} found"
  *       '500':
  *         description: Internal server error
  *         content:
@@ -285,33 +178,73 @@ export default userRouter;
  *                   example: "An unexpected error occurred"
  */
 
+// GET all journals
 /**
  * @swagger
- * /api/v1/users/{id}:
- *   delete:
- *     summary: Delete a user by id
+ * /api/v1/journals:
+ *   get:
+ *     summary: Get all journals
  *     tags:
- *       - User
+ *       - Journal
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Journal'
+ *       '404':
+ *         description: No journals found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No journals found"
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "An unexpected error occurred"
+ */
+
+// GET a journal by id
+/**
+ * @swagger
+ * /api/v1/journals/{id}:
+ *   get:
+ *     summary: Get a journal by id
+ *     tags:
+ *       - Journal
+ *     security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: The user id
+ *         description: The journal id
  *     responses:
  *       '200':
- *         description: User successfully deleted
+ *         description: Success
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "User with the id: {id} successfully deleted"
+ *               $ref: '#/components/schemas/Journal'
  *       '404':
- *         description: No user found with the provided id
+ *         description: No journal found with the provided id
  *         content:
  *           application/json:
  *             schema:
@@ -319,7 +252,57 @@ export default userRouter;
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "No user with the id: {id} found"
+ *                   example: "No journal with the id: {id} found"
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "An unexpected error occurred"
+ */
+
+// DELETE a journal by id
+/**
+ * @swagger
+ * /api/v1/journals/{id}:
+ *   delete:
+ *     summary: Delete a journal by id
+ *     tags:
+ *       - Journal
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The journal id
+ *     responses:
+ *       '200':
+ *         description: Journal successfully deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Journal with the id: {id} successfully deleted"
+ *       '404':
+ *         description: No journal found with the provided id
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "No journal with the id: {id} found"
  *       '500':
  *         description: Internal server error
  *         content:

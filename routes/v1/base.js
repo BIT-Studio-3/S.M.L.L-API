@@ -5,7 +5,7 @@ const createRouter = (controller, postValidator, putValidator) => {
 
   router.get("/", controller.get);
   router.get("/:id", controller.getById);
-  router.get("/email/:email", controller.getByEmail); 
+  router.get("/email/:email", controller.getByEmail);
   router.post("/", postValidator, controller.create);
   router.put("/:id", putValidator, controller.update);
   router.delete("/:id", controller.delete);
